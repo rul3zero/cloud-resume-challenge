@@ -4,6 +4,10 @@ This is my attempt at the [Cloud Resume Challenge](https://cloudresumechallenge.
 - Bot protection using Google reCAPTCHA v3
 - Duplicate visitor detection
 - SNS notifications and alerts
+
+## Architecture
+
+![AWS Cloud Resume Challenge Architecture](cloud-resume-challenge-final.png)
  
 ## Live Demo
 
