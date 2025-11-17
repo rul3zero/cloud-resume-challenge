@@ -1,0 +1,82 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# AWS Lambda & SAM
+*.zip
+lambda-package/
+package/
+.aws-sam/
+samconfig.toml
+
+# Environment variables
+.env
+.env.local
+*.pem
+*.key
+
+# Logs
+*.log
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Terraform - CRITICAL! Never commit these
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+encryption.json
+
+# Terraform CLI configuration files
+.terraform.lock.hcl
+
+# Backups (contain sensitive state data)
+backups/*.json
+backups/terraform-state-*
+
+# AWS Credentials - NEVER commit
+**/credentials
+**/secrets.json
+aws-credentials.json
+
+# Scripts
+terraform/import-resources.ps1

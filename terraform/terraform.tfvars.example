@@ -1,0 +1,23 @@
+# Terraform Variables Configuration
+# Copy this file to terraform.tfvars and fill in your values
+
+# Domain Name Configuration
+# This will be used for CloudFront aliases, Route53 records, API Gateway custom domain, etc.
+domain_name = "your-domain.com"
+
+# Google reCAPTCHA v3 Secret Key
+# Get this from: https://www.google.com/recaptcha/admin
+recaptcha_secret_key = "your-recaptcha-secret-key-here"
+
+# Existing Route53 Hosted Zone ID
+# Find this in AWS Console > Route53 > Hosted Zones
+# Example: Z0169981F3DJGVJSZ243
+route53_zone_id = "your-route53-zone-id-here"
+
+# Optional: Override default resource names
+s3_bucket_name = "your-domain.com"  # Should typically match domain_name
+# dynamodb_table_name = "visitor-counter"  
+# sns_topic_name = "visitor-counter-alert"
+
+# Optional: Disable data protection (allows terraform destroy to delete data)
+# protect_data_resources = false

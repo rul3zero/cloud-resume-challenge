@@ -1,0 +1,99 @@
+name: Deploy Backend Infrastructure
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+env:
+  AWS_REGION: ap-southeast-1
+  TF_VERSION: 1.5.0
+
+jobs:
+  test:
+    name: Run Python Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Install dependencies
+        run: |
+          pip install boto3 pytest pytest-cov moto
+      
+      - name: Run tests
+        run: |
+          pytest tests/ -v --cov=lambda
+        env:
+          DYNAMODB_TABLE: visitor-counter
+          SNS_TOPIC_ARN: arn:aws:sns:ap-southeast-1:123456789012:test
+          RECAPTCHA_SECRET_KEY: test-key
+          AWS_DEFAULT_REGION: ap-southeast-1
+  
+  terraform:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      
+      - name: Zip Lambda Function
+        run: |
+          cd lambda
+          zip -r lambda_function.zip lambda_function.py
+      
+      - name: Terraform Init
+        run: |
+          cd terraform
+          terraform init
+      
+      - name: Terraform Format Check
+        run: |
+          cd terraform
+          terraform fmt -check
+        continue-on-error: true
+      
+      - name: Terraform Validate
+        run: |
+          cd terraform
+          terraform validate
+      
+      - name: Terraform Plan
+        run: |
+          cd terraform
+          terraform plan -out=tfplan
+        env:
+          TF_VAR_recaptcha_secret_key: ${{ secrets.RECAPTCHA_SECRET_KEY }}
+          TF_VAR_route53_zone_id: ${{ secrets.ROUTE53_ZONE_ID }}
+      
+      - name: Terraform Apply
+        run: |
+          cd terraform
+          terraform apply -auto-approve tfplan
+        env:
+          TF_VAR_recaptcha_secret_key: ${{ secrets.RECAPTCHA_SECRET_KEY }}
+          TF_VAR_route53_zone_id: ${{ secrets.ROUTE53_ZONE_ID }}
