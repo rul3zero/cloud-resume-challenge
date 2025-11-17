@@ -7,9 +7,10 @@ This is my attempt at the [Cloud Resume Challenge](https://cloudresumechallenge.
 
 ## Architecture
 
-![AWS Cloud Resume Challenge Architecture](cloud-resume-challenge-final.png)
+![AWS Cloud Resume Challenge Architecture](https://github.com/user-attachments/assets/f06eb22d-f6e6-4b79-8f7a-e85c895c01cb)
  
 ## Live Demo
+
 
 **Website**: 🌐 [joshcarl.dev](https://joshcarl.dev) 
 **API Endpoint**: [api.joshcarl.dev/count](https://api.joshcarl.dev/count)
