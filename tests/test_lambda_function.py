@@ -36,6 +36,7 @@ from resume_handler import (
     get_resume_download_count,
     track_download_event,
     send_download_milestone_notification,
+    check_daily_download_limit,
 )
 
 @pytest.fixture(scope="module", autouse=True)
@@ -352,3 +353,68 @@ def test_resume_download_options():
     resp = lambda_handler(event, None)
     assert resp['statusCode'] == 200
     assert resp['body'] == ''
+
+
+def test_daily_download_limit():
+    """Test daily download limit (3 downloads per IP per day)"""
+    from lambda_function import get_dynamodb_table
+    
+    visitor_ip = '192.168.1.200'
+    
+    # First 3 downloads should be allowed
+    for i in range(3):
+        result = check_daily_download_limit(visitor_ip, get_dynamodb_table, max_downloads=3)
+        assert result['allowed'] is True
+        assert result['downloads_today'] == i + 1
+        print(f"Download {i+1}: {result}")
+    
+    # 4th download should be blocked
+    result = check_daily_download_limit(visitor_ip, get_dynamodb_table, max_downloads=3)
+    assert result['allowed'] is False
+    assert result['downloads_today'] == 3
+    assert 'limit' in result['message'].lower()
+    print(f"4th download blocked: {result}")
+
+
+@patch('lambda_function.verify_recaptcha')
+def test_resume_download_with_limit(mock_verify):
+    """Test that resume download endpoint respects daily limit"""
+    mock_verify.return_value = {'success': True, 'score': 0.9}
+    
+    visitor_ip = '192.168.1.201'
+    
+    # Make 3 successful downloads
+    for i in range(3):
+        event = {
+            'httpMethod': 'POST',
+            'path': '/resume-download',
+            'body': json.dumps({'token': 'fake_token'}),
+            'headers': {'X-Forwarded-For': visitor_ip},
+            'requestContext': {'identity': {'sourceIp': visitor_ip}}
+        }
+        
+        resp = lambda_handler(event, None)
+        body = json.loads(resp['body'])
+        
+        assert resp['statusCode'] == 200
+        assert body['downloadAllowed'] is True
+        print(f"Download {i+1} successful")
+    
+    # 4th download should be blocked with 429 status
+    event = {
+        'httpMethod': 'POST',
+        'path': '/resume-download',
+        'body': json.dumps({'token': 'fake_token'}),
+        'headers': {'X-Forwarded-For': visitor_ip},
+        'requestContext': {'identity': {'sourceIp': visitor_ip}}
+    }
+    
+    resp = lambda_handler(event, None)
+    body = json.loads(resp['body'])
+    
+    assert resp['statusCode'] == 429  # Too Many Requests
+    assert body['downloadAllowed'] is False
+    assert body['downloadsToday'] == 3
+    assert body['maxDownloads'] == 3
+    assert 'limit' in body['message'].lower()
+    print(f"4th download blocked with 429: {body['message']}")

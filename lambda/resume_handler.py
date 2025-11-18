@@ -23,6 +23,25 @@ def handle_resume_download(event, headers, verify_recaptcha_func, get_dynamodb_t
         
         print(f"Resume download request from IP: {visitor_ip}")
         
+        # Check daily download limit first
+        daily_limit_check = check_daily_download_limit(visitor_ip, get_dynamodb_table_func)
+        
+        if not daily_limit_check['allowed']:
+            response_body = {
+                'success': False,
+                'downloadAllowed': False,
+                'downloadCount': get_resume_download_count(get_dynamodb_table_func, unix_to_philippine_time_func),
+                'message': daily_limit_check['message'],
+                'downloadsToday': daily_limit_check['downloads_today'],
+                'maxDownloads': daily_limit_check['max_downloads']
+            }
+            
+            return {
+                'statusCode': 429,  # Too Many Requests
+                'headers': headers,
+                'body': json.dumps(response_body)
+            }
+        
         # Verify reCAPTCHA
         recaptcha_result = verify_recaptcha_func(token)
         recaptcha_valid = recaptcha_result.get('success', False)
@@ -231,3 +250,67 @@ Congratulations on reaching this milestone!
         
     except Exception as e:
         print(f"ERROR sending milestone notification: {str(e)}")
+
+
+def check_daily_download_limit(visitor_ip, get_dynamodb_table_func, max_downloads=3):
+    """Check if visitor has exceeded daily download limit"""
+    table = get_dynamodb_table_func()
+    
+    try:
+        # Create daily limit tracking ID
+        today = datetime.now(timezone.utc).date().isoformat()
+        limit_id = f"daily_limit_{visitor_ip.replace('.', '_')}_{today}"
+        
+        # Get current download count for this IP today
+        response = table.get_item(Key={'id': limit_id})
+        
+        if 'Item' in response:
+            downloads_today = int(response['Item'].get('downloads', 0))
+            
+            if downloads_today >= max_downloads:
+                print(f"Daily limit exceeded for IP {visitor_ip}: {downloads_today}/{max_downloads}")
+                return {
+                    'allowed': False,
+                    'downloads_today': downloads_today,
+                    'max_downloads': max_downloads,
+                    'message': f'Daily download limit reached. You can download {max_downloads} times per day. Please try again tomorrow.'
+                }
+        else:
+            downloads_today = 0
+        
+        # Create or update the daily limit record
+        tomorrow_midnight = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+        ttl = int(tomorrow_midnight.timestamp())
+        
+        table.update_item(
+            Key={'id': limit_id},
+            UpdateExpression='ADD downloads :inc SET #ttl = :ttl',
+            ExpressionAttributeNames={
+                '#ttl': 'ttl'
+            },
+            ExpressionAttributeValues={
+                ':inc': 1,
+                ':ttl': ttl
+            }
+        )
+        
+        downloads_today += 1
+        print(f"Download allowed for IP {visitor_ip}: {downloads_today}/{max_downloads} today")
+        
+        return {
+            'allowed': True,
+            'downloads_today': downloads_today,
+            'max_downloads': max_downloads,
+            'message': 'Download allowed'
+        }
+        
+    except Exception as e:
+        print(f"ERROR checking daily download limit: {str(e)}")
+        # Allow download on error (fail open)
+        return {
+            'allowed': True,
+            'downloads_today': 0,
+            'max_downloads': max_downloads,
+            'message': 'Download allowed (limit check error)'
+        }
+

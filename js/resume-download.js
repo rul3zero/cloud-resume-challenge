@@ -58,6 +58,15 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const data = await response.json();
             
+            // Check for rate limiting (429 Too Many Requests)
+            if (response.status === 429) {
+                const limitMsg = data.message || 'Daily download limit reached';
+                const detailMsg = data.downloadsToday && data.maxDownloads 
+                    ? `\n\nYou've downloaded ${data.downloadsToday} time(s) today (max: ${data.maxDownloads})`
+                    : '';
+                throw new Error(limitMsg + detailMsg);
+            }
+            
             // Check if verification was successful and download is allowed
             if (data.success && data.downloadAllowed) {
                 // Use the presigned S3 URL from backend
