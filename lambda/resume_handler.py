@@ -166,9 +166,8 @@ def increment_resume_downloads(visitor_ip, get_dynamodb_table_func, get_sns_clie
         # Track individual download with IP and timestamp (for analytics)
         track_download_event(visitor_ip, new_count, get_dynamodb_table_func, unix_to_philippine_time_func)
         
-        # Send SNS notification for milestone downloads (every 10 downloads)
-        if new_count % 10 == 0:
-            send_download_milestone_notification(new_count, get_sns_client_func, sns_topic_arn)
+        # Send SNS notification for EVERY download
+        send_download_notification(new_count, visitor_ip, get_sns_client_func, sns_topic_arn)
         
         return new_count
         
@@ -250,6 +249,38 @@ Congratulations on reaching this milestone!
         
     except Exception as e:
         print(f"ERROR sending milestone notification: {str(e)}")
+
+
+def send_download_notification(download_count, visitor_ip, get_sns_client_func, sns_topic_arn):
+    """Send SNS notification for EVERY resume download"""
+    try:
+        sns = get_sns_client_func()
+        
+        timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+        
+        message = f"""
+Resume Download Alert
+
+Your resume has been downloaded!
+
+Download Information:
+- Total Downloads: {download_count}
+- Download Time: {timestamp} UTC
+- IP Address: {visitor_ip}
+
+This is download #{download_count}.
+        """.strip()
+        
+        sns.publish(
+            TopicArn=sns_topic_arn,
+            Subject=f'📄 Resume Downloaded - Total: {download_count}',
+            Message=message
+        )
+        
+        print(f"Sent download notification for download #{download_count}")
+        
+    except Exception as e:
+        print(f"ERROR sending download notification: {str(e)}")
 
 
 def check_daily_download_limit(visitor_ip, get_dynamodb_table_func, max_downloads=3):
