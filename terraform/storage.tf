@@ -104,6 +104,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "resume_bucket" {
     id     = "transition-old-versions"
     status = "Enabled"
 
+    filter {}  # Apply to all objects in the bucket
+
     noncurrent_version_transition {
       noncurrent_days = 30
       storage_class   = "STANDARD_IA"
