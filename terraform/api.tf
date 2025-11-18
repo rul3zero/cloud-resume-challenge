@@ -79,11 +79,15 @@ resource "aws_sns_topic" "visitor_alerts" {
   name = var.sns_topic_name
 }
 
-resource "aws_sns_topic_subscription" "visitor_alerts_email" {
-  topic_arn = aws_sns_topic.visitor_alerts.arn
-  protocol  = "email"
-  endpoint  = "work@${var.domain_name}" # Replace with your email
-}
+# NOTE: SNS email subscription is managed manually via AWS Console
+# Subscribe at: AWS Console > SNS > Topics > visitor-counter-alert > Create subscription
+# This prevents Terraform from recreating subscriptions and requiring re-confirmation
+# 
+# resource "aws_sns_topic_subscription" "visitor_alerts_email" {
+#   topic_arn = aws_sns_topic.visitor_alerts.arn
+#   protocol  = "email"
+#   endpoint  = "work@${var.domain_name}"
+# }
 
 resource "aws_lambda_function" "visitor_counter" {
   function_name = "visitor-counter"
