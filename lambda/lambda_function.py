@@ -11,10 +11,13 @@ from resume_handler import handle_resume_download
 RECAPTCHA_SECRET = os.environ.get('RECAPTCHA_SECRET_KEY', '')
 SNS_TOPIC_ARN = os.environ.get('SNS_TOPIC_ARN', 'arn:aws:sns:ap-southeast-1:637423537833:visitor-counter-alert')
 DYNAMODB_TABLE = os.environ.get('DYNAMODB_TABLE', 'visitor-counter')
+RESUME_BUCKET_NAME = os.environ.get('RESUME_BUCKET_NAME', '')
+RESUME_FILE_KEY = os.environ.get('RESUME_FILE_KEY', 'resume.pdf')
 
 # Lazy initialization for AWS clients
 _dynamodb = None
 _sns = None
+_s3 = None
 _table = None
 
 def get_dynamodb_table():
@@ -31,6 +34,13 @@ def get_sns_client():
     if _sns is None:
         _sns = boto3.client('sns')
     return _sns
+
+def get_s3_client():
+    """Get or create S3 client"""
+    global _s3
+    if _s3 is None:
+        _s3 = boto3.client('s3')
+    return _s3
 
 def verify_recaptcha(token):
     """Verify reCAPTCHA token with Google"""
@@ -198,7 +208,8 @@ def lambda_handler(event, context):
             get_sns_client,
             get_client_ip,
             unix_to_philippine_time,
-            SNS_TOPIC_ARN
+            SNS_TOPIC_ARN,
+            get_s3_client
         )
     
     # Default: handle visitor counter

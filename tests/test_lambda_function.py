@@ -12,6 +12,8 @@ os.environ['DYNAMODB_TABLE'] = 'visitor-counter'
 os.environ['SNS_TOPIC_ARN'] = 'arn:aws:sns:ap-southeast-1:123456789012:test'
 os.environ['RECAPTCHA_SECRET_KEY'] = 'test-secret-key'
 os.environ['AWS_DEFAULT_REGION'] = 'ap-southeast-1'
+os.environ['RESUME_BUCKET_NAME'] = 'test-resume-bucket'
+os.environ['RESUME_FILE_KEY'] = 'resume.pdf'
 
 # Add lambda directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent / 'lambda'))
@@ -25,6 +27,7 @@ from lambda_function import (
     increment_visitor_count,
     send_sns_notification,
     lambda_handler,
+    get_s3_client,
 )
 
 from resume_handler import (
@@ -53,6 +56,19 @@ def aws_resources():
         # SNS topic
         sns = boto3.client('sns', region_name='ap-southeast-1')
         sns.create_topic(Name='test')
+        
+        # S3 bucket for resumes
+        s3 = boto3.client('s3', region_name='ap-southeast-1')
+        s3.create_bucket(
+            Bucket='test-resume-bucket',
+            CreateBucketConfiguration={'LocationConstraint': 'ap-southeast-1'}
+        )
+        # Upload test resume file
+        s3.put_object(
+            Bucket='test-resume-bucket',
+            Key='resume.pdf',
+            Body=b'Test PDF content'
+        )
 
         yield
 
@@ -167,6 +183,8 @@ def test_resume_download_success(mock_verify):
     assert body['downloadAllowed'] is True
     assert body['downloadCount'] >= 1
     assert body['score'] == 0.9
+    assert 'downloadUrl' in body
+    assert body['downloadUrl'].startswith('https://test-resume-bucket.s3')
 
 
 @patch('lambda_function.verify_recaptcha')

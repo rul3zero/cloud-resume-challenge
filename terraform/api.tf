@@ -62,6 +62,13 @@ resource "aws_iam_role_policy" "visitor_counter_policy" {
         Effect   = "Allow",
         Action   = "sns:Publish",
         Resource = aws_sns_topic.visitor_alerts.arn
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "s3:GetObject"
+        ],
+        Resource = "${aws_s3_bucket.resume_bucket.arn}/*"
       }
     ]
   })
@@ -92,6 +99,8 @@ resource "aws_lambda_function" "visitor_counter" {
       DYNAMODB_TABLE       = aws_dynamodb_table.visitor_counter.name
       RECAPTCHA_SECRET_KEY = var.recaptcha_secret_key
       SNS_TOPIC_ARN        = aws_sns_topic.visitor_alerts.arn
+      RESUME_BUCKET_NAME   = aws_s3_bucket.resume_bucket.id
+      RESUME_FILE_KEY      = "resume.pdf"
     }
   }
 

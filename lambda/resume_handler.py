@@ -1,16 +1,17 @@
 """
 Resume Download Handler Module
-Handles resume download tracking with reCAPTCHA verification
+Handles resume download tracking with reCAPTCHA verification and S3 presigned URLs
 """
 
 import json
+import os
 from datetime import datetime, timezone, timedelta
 
 
 def handle_resume_download(event, headers, verify_recaptcha_func, get_dynamodb_table_func, 
                            get_sns_client_func, get_visitor_ip_func, unix_to_philippine_time_func,
-                           sns_topic_arn):
-    """Handle resume download tracking with reCAPTCHA verification"""
+                           sns_topic_arn, get_s3_client_func):
+    """Handle resume download tracking with reCAPTCHA verification and S3 presigned URL generation"""
     try:
         # Parse request body
         body = json.loads(event.get('body', '{}'))
@@ -42,10 +43,15 @@ def handle_resume_download(event, headers, verify_recaptcha_func, get_dynamodb_t
                 sns_topic_arn
             )
             
+            # Generate presigned S3 URL for resume download
+            download_url = generate_resume_presigned_url(get_s3_client_func)
+            
             response_body = {
                 'success': True,
                 'downloadAllowed': True,
                 'downloadCount': download_count,
+                'downloadUrl': download_url,
+                'expiresIn': 300,  # URL expires in 5 minutes
                 'score': score,
                 'message': 'Download verified successfully'
             }
@@ -83,6 +89,35 @@ def handle_resume_download(event, headers, verify_recaptcha_func, get_dynamodb_t
                 'message': 'Internal server error'
             })
         }
+
+
+def generate_resume_presigned_url(get_s3_client_func, expiration=300):
+    """Generate a presigned URL for resume download from S3"""
+    try:
+        s3_client = get_s3_client_func()
+        bucket_name = os.environ.get('RESUME_BUCKET_NAME')
+        file_key = os.environ.get('RESUME_FILE_KEY', 'resume.pdf')
+        
+        if not bucket_name:
+            raise ValueError('RESUME_BUCKET_NAME environment variable not set')
+        
+        # Generate presigned URL
+        presigned_url = s3_client.generate_presigned_url(
+            'get_object',
+            Params={
+                'Bucket': bucket_name,
+                'Key': file_key,
+                'ResponseContentDisposition': 'attachment; filename="Joshua_Carl_Soguilon_Resume.pdf"'
+            },
+            ExpiresIn=expiration
+        )
+        
+        print(f"Generated presigned URL for {bucket_name}/{file_key}")
+        return presigned_url
+        
+    except Exception as e:
+        print(f"ERROR generating presigned URL: {str(e)}")
+        raise
 
 
 def increment_resume_downloads(visitor_ip, get_dynamodb_table_func, get_sns_client_func,

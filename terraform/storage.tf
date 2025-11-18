@@ -57,5 +57,62 @@ resource "aws_s3_bucket_policy" "cloudresume_bucket_policy" {
   })
 }
 
+# S3 Bucket for Resume Document Storage
+resource "aws_s3_bucket" "resume_bucket" {
+  bucket = "${var.domain_name}-resume-document"
+
+  tags = {
+    Name = "Resume Document Storage"
+  }
+}
+
+# Block public access to resume bucket
+resource "aws_s3_bucket_public_access_block" "resume_bucket" {
+  bucket = aws_s3_bucket.resume_bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# Enable versioning for resume bucket
+resource "aws_s3_bucket_versioning" "resume_bucket" {
+  bucket = aws_s3_bucket.resume_bucket.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# Server-side encryption for resume bucket
+resource "aws_s3_bucket_server_side_encryption_configuration" "resume_bucket" {
+  bucket = aws_s3_bucket.resume_bucket.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "AES256"
+    }
+  }
+}
+
+# Lifecycle rule to transition old versions to cheaper storage
+resource "aws_s3_bucket_lifecycle_configuration" "resume_bucket" {
+  bucket = aws_s3_bucket.resume_bucket.id
+
+  rule {
+    id     = "transition-old-versions"
+    status = "Enabled"
+
+    noncurrent_version_transition {
+      noncurrent_days = 30
+      storage_class   = "STANDARD_IA"
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = 90
+    }
+  }
+}
 
 
