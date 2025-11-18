@@ -72,7 +72,7 @@ jobs:
       - name: Zip Lambda Function
         run: |
           cd lambda
-          zip -r lambda_function.zip lambda_function.py
+          zip -r lambda_function.zip lambda_function.py resume_handler.py
       
       - name: Terraform Init
         run: |
