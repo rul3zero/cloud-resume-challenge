@@ -80,3 +80,6 @@ aws-credentials.json
 
 # Scripts
 terraform/import-resources.ps1
+
+# Others
+md/
