@@ -48,6 +48,9 @@ samconfig.toml
 # Distribution / packaging
 build/
 dist/
+
+# JavaScript files (frontend-only)
+/js/
 *.egg-info/
 
 # Terraform - CRITICAL! Never commit these
