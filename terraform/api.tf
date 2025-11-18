@@ -131,6 +131,12 @@ resource "aws_apigatewayv2_route" "visitor_count_route" {
   target    = "integrations/${aws_apigatewayv2_integration.lambda_integration.id}"
 }
 
+resource "aws_apigatewayv2_route" "resume_download_route" {
+  api_id    = aws_apigatewayv2_api.visitor_api.id
+  route_key = "POST /resume-download"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda_integration.id}"
+}
+
 resource "aws_lambda_permission" "allow_apigw_to_invoke_lambda" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"

@@ -5,6 +5,7 @@ import urllib.parse
 from datetime import datetime, timedelta
 import os
 from datetime import datetime, timedelta, timezone
+from resume_handler import handle_resume_download
 
 # Initialize constants
 RECAPTCHA_SECRET = os.environ.get('RECAPTCHA_SECRET_KEY', '')
@@ -168,6 +169,10 @@ def lambda_handler(event, context):
     
     print(f"Received event: {json.dumps(event)}")
     
+    # Determine the request path
+    path = event.get('path', '').rstrip('/')
+    raw_path = event.get('rawPath', path)
+    
     headers = {
         'Access-Control-Allow-Origin': 'https://joshcarl.dev',
         'Access-Control-Allow-Headers': 'Content-Type',
@@ -176,13 +181,27 @@ def lambda_handler(event, context):
     }
     
     # Handle preflight OPTIONS request
-    if event.get('httpMethod') == 'OPTIONS':
+    if event.get('httpMethod') == 'OPTIONS' or event.get('requestContext', {}).get('http', {}).get('method') == 'OPTIONS':
         return {
             'statusCode': 200,
             'headers': headers,
             'body': ''
         }
     
+    # Route to appropriate handler
+    if path == '/resume-download' or path == '/download' or raw_path == '/resume-download' or raw_path == '/download':
+        return handle_resume_download(
+            event, 
+            headers,
+            verify_recaptcha,
+            get_dynamodb_table,
+            get_sns_client,
+            get_visitor_ip,
+            unix_to_philippine_time,
+            SNS_TOPIC_ARN
+        )
+    
+    # Default: handle visitor counter
     try:
         # Parse request body
         body_str = event.get('body', '{}')
