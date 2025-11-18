@@ -196,7 +196,7 @@ def lambda_handler(event, context):
             verify_recaptcha,
             get_dynamodb_table,
             get_sns_client,
-            get_visitor_ip,
+            get_client_ip,
             unix_to_philippine_time,
             SNS_TOPIC_ARN
         )
