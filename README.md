@@ -5,6 +5,7 @@ This is my attempt at the [Cloud Resume Challenge](https://cloudresumechallenge.
 - Duplicate visitor detection
 - SNS notifications and alerts
 
+READ THE BLOGPOST HERE: [https://joshcarl.dev/portfolio/cloud-resume-challenge](https://joshcarl.dev/portfolio/cloud-resume-challenge/)
 ## Architecture
 
 ![AWS Cloud Resume Challenge Architecture](https://github.com/user-attachments/assets/f06eb22d-f6e6-4b79-8f7a-e85c895c01cb)
