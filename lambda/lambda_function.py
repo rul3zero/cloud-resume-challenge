@@ -181,7 +181,11 @@ def lambda_handler(event, context):
     
     # Determine the request path
     path = event.get('path', '').rstrip('/')
-    raw_path = event.get('rawPath', path)
+    raw_path = event.get('rawPath', path).rstrip('/')
+    
+    # Debug logging
+    print(f"Path routing - path: '{path}', raw_path: '{raw_path}'")
+    print(f"Route check: path==/resume-download: {path == '/resume-download'}, raw_path==/resume-download: {raw_path == '/resume-download'}")
     
     headers = {
         'Access-Control-Allow-Origin': 'https://joshcarl.dev',
