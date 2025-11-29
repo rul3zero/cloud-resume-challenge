@@ -1,7 +1,6 @@
 output "a_records" {
   value = [
     aws_route53_record.cloudfront_alias.name,
-    aws_route53_record.a_record_h9gqczx4ir8x.name
   ]
   description = "Names of A records in the hosted zone"
 }

@@ -162,9 +162,9 @@ resource "aws_route53_record" "cname_link" {
 }
 
 # A Record
-resource "aws_route53_record" "a_record_h9gqczx4ir8x" {
+resource "aws_route53_record" "a_record_h5gqczx4ir8x" {
   zone_id = data.aws_route53_zone.cloudresume_zone.id
-  name    = "h9gqczx4ir8x.${var.domain_name}"
+  name    = "h5gqczx4ir8x.${var.domain_name}"
   type    = "A"
   ttl     = 300
   records = ["20.205.134.55"]
